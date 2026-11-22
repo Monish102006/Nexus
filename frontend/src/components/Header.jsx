@@ -7,6 +7,7 @@ function Pill({ icon: Icon, label, value, tone }) {
     warn: "border-amber-500/25 bg-amber-500/10 text-amber-300",
     info: "border-indigo-500/25 bg-indigo-500/10 text-indigo-300",
     off: "border-white/10 bg-white/[0.03] text-slate-400",
+    bad: "border-rose-500/25 bg-rose-500/10 text-rose-300",
   };
   return (
     <div
@@ -29,7 +30,21 @@ export default function Header({
   view,
   onNavigate,
 }) {
-  const demo = health?.demo_mode;
+  const aiStatus = !health
+    ? { value: "Offline", tone: "off" }
+    : health.demo_mode || health.mode === "demo"
+    ? { value: "Demo", tone: "warn" }
+    : { value: "Live", tone: "good" };
+
+  const tgStatus = !health
+    ? { value: "Offline", tone: "off" }
+    : health.telegram_running
+    ? { value: "Connected", tone: "good" }
+    : { value: "Offline", tone: "off" };
+
+  const apiStatus = health
+    ? { value: "Online", tone: "good" }
+    : { value: "Offline", tone: "bad" };
   return (
     <header className="sticky top-0 z-20 border-b border-white/[0.06] bg-ink-950/75 backdrop-blur-xl">
       <div className="mx-auto flex h-20 max-w-[1600px] items-center justify-between gap-4 px-4 sm:px-6 lg:px-10">
@@ -51,20 +66,20 @@ export default function Header({
           <Pill
             icon={Sparkles}
             label="AI"
-            value={demo ? "Demo" : "Live"}
-            tone={demo ? "warn" : "good"}
+            value={aiStatus.value}
+            tone={aiStatus.tone}
           />
           <Pill
             icon={Send}
             label="Telegram"
-            value={health?.telegram_running ? "Connected" : "Offline"}
-            tone={health?.telegram_running ? "good" : "off"}
+            value={tgStatus.value}
+            tone={tgStatus.tone}
           />
           <Pill
             icon={Wifi}
             label="API"
-            value={health ? "Online" : "Offline"}
-            tone={health ? "good" : "info"}
+            value={apiStatus.value}
+            tone={apiStatus.tone}
           />
           <button
             onClick={onRefresh}

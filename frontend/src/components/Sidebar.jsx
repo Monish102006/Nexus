@@ -39,7 +39,21 @@ function StatusRow({ label, value, tone }) {
 }
 
 export default function Sidebar({ view, onNavigate, health, pendingCount }) {
-  const mode = health?.demo_mode ? "Demo" : "Live";
+  const aiMode = !health
+    ? { value: "Offline", tone: "off" }
+    : health.demo_mode || health.mode === "demo"
+    ? { value: "Demo", tone: "warn" }
+    : { value: "Live", tone: "good" };
+
+  const tgStatus = !health
+    ? { value: "Offline", tone: "off" }
+    : health.telegram_running
+    ? { value: "Connected", tone: "good" }
+    : { value: "Offline", tone: "off" };
+
+  const apiStatus = health
+    ? { value: "Online", tone: "good" }
+    : { value: "Offline", tone: "bad" };
   return (
     <aside className="fixed inset-y-0 left-0 z-30 hidden w-72 flex-col border-r border-white/[0.06] bg-ink-900/80 backdrop-blur-xl lg:flex">
       <div className="flex h-20 items-center gap-3 border-b border-white/[0.06] px-6">
@@ -104,18 +118,18 @@ export default function Sidebar({ view, onNavigate, health, pendingCount }) {
           <div className="space-y-1.5">
             <StatusRow
               label="AI mode"
-              value={mode}
-              tone={health?.demo_mode ? "warn" : "good"}
+              value={aiMode.value}
+              tone={aiMode.tone}
             />
             <StatusRow
               label="Telegram"
-              value={health?.telegram_running ? "Connected" : "Offline"}
-              tone={health?.telegram_running ? "good" : "off"}
+              value={tgStatus.value}
+              tone={tgStatus.tone}
             />
             <StatusRow
               label="API"
-              value={health ? "Online" : "Offline"}
-              tone={health ? "good" : "bad"}
+              value={apiStatus.value}
+              tone={apiStatus.tone}
             />
           </div>
         </div>

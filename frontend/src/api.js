@@ -1,9 +1,46 @@
 import axios from "axios";
 
-const baseURL =
-  import.meta.env.VITE_API_URL || "http://127.0.0.1:8000/api";
+/**
+ * Resolves and normalizes the backend API base URL.
+ * Supports VITE_API_BASE_URL (and legacy VITE_API_URL).
+ * Fallback for local development: http://127.0.0.1:8000
+ * In production builds (if env not set): https://nexus-backend-d5th.onrender.com
+ * Guarantees a single `/api` suffix without creating duplicate `/api/api`.
+ */
+export function resolveApiBaseUrl(customUrl) {
+  const envUrl =
+    customUrl ||
+    import.meta.env.VITE_API_BASE_URL ||
+    import.meta.env.VITE_API_URL;
 
-export const api = axios.create({ baseURL, timeout: 120000 });
+  const defaultUrl = import.meta.env.PROD
+    ? "https://nexus-backend-d5th.onrender.com"
+    : "http://127.0.0.1:8000";
+
+  const raw =
+    (envUrl && typeof envUrl === "string" ? envUrl.trim() : "") || defaultUrl;
+  const stripped = raw.replace(/\/+$/, "");
+  return stripped.endsWith("/api") ? stripped : `${stripped}/api`;
+}
+
+export const API_BASE_URL = resolveApiBaseUrl();
+
+export const api = axios.create({
+  baseURL: API_BASE_URL,
+  timeout: 120000,
+});
+
+// Guard against duplicate /api prefix if a caller accidentally includes /api in the path
+api.interceptors.request.use((config) => {
+  if (config.url) {
+    if (config.url.startsWith("/api/")) {
+      config.url = config.url.replace(/^\/api\//, "/");
+    } else if (config.url === "/api") {
+      config.url = "/";
+    }
+  }
+  return config;
+});
 
 export const getHealth = () => api.get("/health").then((r) => r.data);
 export const getMissions = () => api.get("/missions").then((r) => r.data);

@@ -211,20 +211,52 @@ export default function App() {
     async (silent = true) => {
       if (!silent) setRefreshing(true);
       try {
-        const [healthData, missionData, agentData, approvalData, activityData] =
-          await Promise.all([
-            api.getHealth(),
-            api.getMissions(),
-            api.getAgents(),
-            api.getApprovals(),
-            api.getActivity(80),
-          ]);
-        setHealth(healthData);
-        setMissions(missionData);
-        setAgentsData(agentData);
-        setApprovals(approvalData);
-        setActivity(activityData);
+        const [
+          healthRes,
+          missionRes,
+          agentRes,
+          approvalRes,
+          activityRes,
+        ] = await Promise.allSettled([
+          api.getHealth(),
+          api.getMissions(),
+          api.getAgents(),
+          api.getApprovals(),
+          api.getActivity(80),
+        ]);
+
+        if (healthRes.status === "fulfilled") {
+          setHealth(healthRes.value);
+        } else {
+          setHealth(null);
+        }
+
+        if (missionRes.status === "fulfilled") {
+          setMissions(missionRes.value);
+        }
+        if (agentRes.status === "fulfilled") {
+          setAgentsData(agentRes.value);
+        }
+        if (approvalRes.status === "fulfilled") {
+          setApprovals(approvalRes.value);
+        }
+        if (activityRes.status === "fulfilled") {
+          setActivity(activityRes.value);
+        }
+
+        const firstRejected = [
+          healthRes,
+          missionRes,
+          agentRes,
+          approvalRes,
+          activityRes,
+        ].find((r) => r.status === "rejected");
+
+        if (firstRejected && !silent) {
+          notify("error", api.errText(firstRejected.reason));
+        }
       } catch (error) {
+        setHealth(null);
         if (!silent) notify("error", api.errText(error));
       } finally {
         setLoading(false);
